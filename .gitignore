@@ -1,5 +1,11 @@
-# Private Files
+# Private files and local tooling
 .private/
-
-# Tree Mapper
 .tree/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/

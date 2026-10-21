@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="favicon.ico">
+    <title>svg-codes tests</title>
+    <style>
+        :root {
+            --bg: #0c0c0c;
+            --fg: #f0f8ff;
+            --line: rgba(240, 248, 255, .2);
+            --dim: rgba(240, 248, 255, .65);
+            --ok: #7fd48a;
+            --bad: #ff7b7b;
+            --new: #f0c674;
+            --s1: 8px;
+            --s2: 16px;
+            --s3: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+            margin: 0;
+            padding: var(--s2);
+            padding-left: max(var(--s2), env(safe-area-inset-left));
+            padding-right: max(var(--s2), env(safe-area-inset-right));
+            padding-bottom: max(var(--s2), env(safe-area-inset-bottom));
+        }
+
+        main {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 var(--s1);
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 0 0 var(--s2);
+        }
+
+        p {
+            margin: 0 0 var(--s2);
+            color: var(--dim);
+            font-size: 14px;
+        }
+
+        section {
+            border-top: 1px solid var(--line);
+            padding: var(--s2) 0 var(--s3);
+        }
+
+        #summary {
+            font-size: 18px;
+            font-weight: 600;
+            margin: var(--s2) 0;
+        }
+
+        #summary.ok {
+            color: var(--ok);
+        }
+
+        #summary.bad {
+            color: var(--bad);
+        }
+
+        #summary.new {
+            color: var(--new);
+        }
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        li {
+            padding: 4px 0;
+            overflow-wrap: anywhere;
+            font-size: 14px;
+        }
+
+        li b {
+            display: inline-block;
+            min-width: 4.5em;
+        }
+
+        li.ok b {
+            color: var(--ok);
+        }
+
+        li.bad b {
+            color: var(--bad);
+        }
+
+        li.new b {
+            color: var(--new);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: var(--s2);
+        }
+
+        figure {
+            margin: 0;
+            min-width: 0;
+        }
+
+        .box {
+            background: #fff;
+            padding: 0;
+        }
+
+        .box svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 180px;
+        }
+
+        figcaption {
+            font-size: 12px;
+            color: var(--dim);
+            margin-top: 4px;
+            overflow-wrap: anywhere;
+        }
+
+        figcaption b {
+            color: var(--fg);
+        }
+
+        figure.ok figcaption b.st {
+            color: var(--ok);
+        }
+
+        figure.bad figcaption b.st {
+            color: var(--bad);
+        }
+
+        figure.new figcaption b.st {
+            color: var(--new);
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--s1);
+            margin-bottom: var(--s2);
+        }
+
+        button {
+            min-height: 44px;
+            padding: 0 var(--s2);
+            background: transparent;
+            color: var(--fg);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        button:hover {
+            border-color: var(--fg);
+        }
+
+        button:focus-visible,
+        textarea:focus-visible {
+            outline: 2px solid var(--fg);
+            outline-offset: 2px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 240px;
+            background: transparent;
+            color: var(--fg);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: var(--s1);
+            font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            white-space: pre;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>svg-codes tests</h1>
+        <p>Each code is generated again and compared with the string saved in <code>tests/snapshots.js</code>.
+            PASS = same. FAIL = different. NEW = nothing saved yet.</p>
+
+        <div id="summary" role="status" aria-live="polite">Running…</div>
+
+        <section>
+            <h2>Rendered codes (scan these with a phone when recording)</h2>
+            <div id="shots" class="grid"></div>
+        </section>
+
+        <section>
+            <h2>Checks</h2>
+            <ul id="results"></ul>
+        </section>
+
+        <section>
+            <h2>Record snapshots</h2>
+            <p>Review the codes above first (visually and with a phone scanner). Then record, copy, and paste the
+                result over <code>tests/snapshots.js</code>. Reload to confirm everything is PASS.</p>
+            <div class="row">
+                <button id="record" type="button">Record snapshots</button>
+                <button id="copy" type="button" hidden>Copy file text</button>
+            </div>
+            <label for="out" hidden>Snapshot file text</label>
+            <textarea id="out" readonly hidden spellcheck="false"></textarea>
+        </section>
+    </main>
+
+    <script type="module">
+        import { generate, toSvgString, toDataURL } from './src/index.js';
+        import { snapshots } from './tests/snapshots.js';
+
+        const shots = document.getElementById('shots');
+        const results = document.getElementById('results');
+        const summary = document.getElementById('summary');
+        const recordBtn = document.getElementById('record');
+        const copyBtn = document.getElementById('copy');
+        const out = document.getElementById('out');
+
+        const counts = { pass: 0, fail: 0, new: 0 };
+        const current = {};
+
+        /* ---------- Test data ---------- */
+
+        const LONG = 'The quick brown fox jumps over the lazy dog. '.repeat(4).trim();
+        const SPECIAL_2D = 'Café ☕ 日本語 — "quotes" & <tags>';
+        const ASCII_ALL = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~';
+
+        /* Snapshot cases: id must stay stable, it is the key in snapshots.js. */
+        const cases = [
+            /* QR */
+            { id: 'qr-short', name: 'QR short text', opts: { type: 'qr', msg: 'Hello svg-codes', size: 200 } },
+            { id: 'qr-long', name: 'QR longer text', opts: { type: 'qr', msg: LONG, size: 200 } },
+            { id: 'qr-url', name: 'QR URL', opts: { type: 'qr', msg: 'https://example.com/path?q=1&r=2#top', size: 200 } },
+            { id: 'qr-special', name: 'QR special characters', opts: { type: 'qr', msg: SPECIAL_2D, size: 200 } },
+            { id: 'qr-numeric', name: 'QR numeric', opts: { type: 'qr', msg: '0123456789012345', size: 200 } },
+            { id: 'qr-h-mask3', name: 'QR level H, mask 3, no boost', opts: { type: 'qr', msg: 'Hello svg-codes', size: 200, qr: { ecl: 'H', mask: 3, boost: false } } },
+            { id: 'qr-colors', name: 'QR colors', opts: { type: 'qr', msg: 'Hello', size: 200, colors: { fg: '#0c0c0c', bg: '#f0f8ff' } } },
+            { id: 'qr-transparent', name: 'QR transparent', opts: { type: 'qr', msg: 'Hello', size: 200, colors: { bg: 'transparent' } } },
+            { id: 'qr-verbose', name: 'QR verbose', opts: { type: 'qr', msg: 'Hello', size: 200, qr: { verbose: true } } },
+
+            /* Data Matrix */
+            { id: 'dm-short', name: 'Data Matrix short text', opts: { type: 'datamatrix', msg: 'Hello svg-codes', size: 200 } },
+            { id: 'dm-long', name: 'Data Matrix longer text', opts: { type: 'datamatrix', msg: LONG, size: 200 } },
+            { id: 'dm-url', name: 'Data Matrix URL', opts: { type: 'datamatrix', msg: 'https://example.com/path?q=1&r=2#top', size: 200 } },
+            { id: 'dm-special', name: 'Data Matrix special characters', opts: { type: 'datamatrix', msg: SPECIAL_2D, size: 200 } },
+            { id: 'dm-numeric', name: 'Data Matrix numeric', opts: { type: 'datamatrix', msg: '0123456789012345', size: 200 } },
+            { id: 'dm-rect', name: 'Data Matrix rectangular', opts: { type: 'datamatrix', msg: 'Hello', size: 200, datamatrix: { rect: true } } },
+            { id: 'dm-colors', name: 'Data Matrix colors', opts: { type: 'datamatrix', msg: 'Hello', size: 200, colors: { fg: '#0c0c0c', bg: '#f0f8ff' } } },
+            { id: 'dm-transparent', name: 'Data Matrix transparent', opts: { type: 'datamatrix', msg: 'Hello', size: 200, colors: { bg: 'transparent' } } },
+
+            /* Code 128 */
+            { id: 'c128-short', name: 'Code 128 short text', opts: { type: 'code128', msg: 'Hello svg-codes' } },
+            { id: 'c128-long', name: 'Code 128 longer text', opts: { type: 'code128', msg: 'The quick brown fox jumps over', size: [600, 100] } },
+            { id: 'c128-url', name: 'Code 128 URL', opts: { type: 'code128', msg: 'https://example.com/a?b=1', size: [480, 90] } },
+            { id: 'c128-ascii', name: 'Code 128 all symbols', opts: { type: 'code128', msg: ASCII_ALL, size: [640, 100] } },
+            { id: 'c128-numeric', name: 'Code 128 numeric', opts: { type: 'code128', msg: '1234567890' } },
+            { id: 'c128-flip', name: 'Code 128 flip', opts: { type: 'code128', msg: 'Hello svg-codes', code128: { flip: true } } },
+            { id: 'c128-vertical', name: 'Code 128 vertical', opts: { type: 'code128', msg: 'Hello', size: { width: 80, height: 240 }, code128: { vertical: true } } },
+            { id: 'c128-vflip', name: 'Code 128 vertical + flip', opts: { type: 'code128', msg: 'Hello', size: { width: 80, height: 240 }, code128: { vertical: true, flip: true } } },
+            { id: 'c128-colors', name: 'Code 128 colors', opts: { type: 'code128', msg: 'Hello', colors: { fg: '#0c0c0c', bg: '#f0f8ff' } } },
+            { id: 'c128-transparent', name: 'Code 128 transparent', opts: { type: 'code128', msg: 'Hello', colors: { bg: 'transparent' } } }
+        ];
+
+        /* Error cases: generation must throw a non-empty message. */
+        const errorCases = [
+            ['empty text (qr)', { type: 'qr', msg: '' }, 'Enter some text'],
+            ['empty text (datamatrix)', { type: 'datamatrix', msg: '' }, 'Enter some text'],
+            ['empty text (code128)', { type: 'code128', msg: '' }, 'Enter some text'],
+            ['text is not a string', { type: 'qr', msg: 123 }, 'string'],
+            ['missing options', undefined, 'options object'],
+            ['unknown type', { type: 'aztec', msg: 'x' }, 'Allowed types'],
+            ['qr too long', { type: 'qr', msg: 'x'.repeat(8000) }, 'Too much text'],
+            ['qr too long at level H', { type: 'qr', msg: 'x'.repeat(1500), qr: { ecl: 'H' } }, 'Too much text'],
+            ['datamatrix too long', { type: 'datamatrix', msg: 'x'.repeat(5000) }, 'Too much text'],
+            ['code128 accented letter', { type: 'code128', msg: 'café' }, 'é'],
+            ['code128 emoji', { type: 'code128', msg: 'hi ☕' }, 'Code 128'],
+            ['code128 control character', { type: 'code128', msg: 'a\tb' }, 'control character'],
+            ['bad foreground color', { type: 'qr', msg: 'x', colors: { fg: 'red' } }, 'hex'],
+            ['bad background color', { type: 'qr', msg: 'x', colors: { bg: 'blue' } }, 'hex'],
+            ['bad qr level', { type: 'qr', msg: 'x', qr: { ecl: 'Z' } }, 'L, M, Q, H'],
+            ['bad qr mask', { type: 'qr', msg: 'x', qr: { mask: 9 } }, 'mask'],
+            ['negative size', { type: 'qr', msg: 'x', size: -5 }, 'Size'],
+            ['negative padding', { type: 'datamatrix', msg: 'x', padding: -1 }, 'Padding'],
+            ['code128 padding too big', { type: 'code128', msg: 'x', padding: 200 }, 'Padding'],
+            ['code128 bad size type', { type: 'code128', msg: 'x', size: 'big' }, 'Size']
+        ];
+
+        /* ---------- Helpers ---------- */
+
+        function firstDiff(a, b) {
+            const n = Math.min(a.length, b.length);
+            let i = 0;
+            while (i < n && a[i] === b[i]) i++;
+            return i;
+        }
+
+        function addLine(status, text) {
+            const li = document.createElement('li');
+            li.className = status;
+            const tag = document.createElement('b');
+            tag.textContent = status === 'ok' ? 'PASS' : status === 'bad' ? 'FAIL' : 'NEW';
+            li.appendChild(tag);
+            li.appendChild(document.createTextNode(text));
+            results.appendChild(li);
+            counts[status === 'ok' ? 'pass' : status === 'bad' ? 'fail' : 'new']++;
+        }
+
+        function addShot(status, name, svg) {
+            const fig = document.createElement('figure');
+            fig.className = status;
+
+            const box = document.createElement('div');
+            box.className = 'box';
+            if (svg) box.appendChild(svg);
+            fig.appendChild(box);
+
+            const cap = document.createElement('figcaption');
+            const st = document.createElement('b');
+            st.className = 'st';
+            st.textContent = status === 'ok' ? 'PASS' : status === 'bad' ? 'FAIL' : 'NEW';
+            cap.appendChild(st);
+            cap.appendChild(document.createTextNode(' ' + name));
+            fig.appendChild(cap);
+
+            shots.appendChild(fig);
+        }
+
+        /* ---------- 1. Snapshot comparison ---------- */
+
+        for (const c of cases) {
+            let svg;
+            let text;
+
+            try {
+                svg = generate(c.opts);
+                text = toSvgString(svg);
+            } catch (e) {
+                addLine('bad', c.name + ' threw: ' + e.message);
+                addShot('bad', c.name, null);
+                continue;
+            }
+
+            current[c.id] = text;
+
+            const expected = Object.prototype.hasOwnProperty.call(snapshots, c.id) ? snapshots[c.id] : undefined;
+
+            if (expected === undefined) {
+                addLine('new', c.name + ' (no snapshot saved yet)');
+                addShot('new', c.name, svg);
+            } else if (expected === text) {
+                addLine('ok', c.name);
+                addShot('ok', c.name, svg);
+            } else {
+                const at = firstDiff(expected, text);
+                addLine('bad', c.name + ' differs from the snapshot at character ' + at +
+                    ' (expected length ' + expected.length + ', got ' + text.length + ')');
+                addShot('bad', c.name, svg);
+            }
+        }
+
+        /* Snapshots saved for ids that no longer exist */
+        const knownIds = new Set(cases.map(c => c.id));
+        for (const id of Object.keys(snapshots)) {
+            if (!knownIds.has(id)) addLine('bad', 'snapshot "' + id + '" has no matching test case');
+        }
+
+        /* ---------- 2. Error cases ---------- */
+
+        for (const [name, opts, mustContain] of errorCases) {
+            try {
+                generate(opts);
+                addLine('bad', 'throws: ' + name + ' (no error was thrown)');
+            } catch (e) {
+                const msg = e && e.message ? e.message : '';
+                const ok = msg.length > 0 && msg.includes(mustContain);
+                addLine(ok ? 'ok' : 'bad',
+                    'throws: ' + name + ' -> ' + (msg || '(empty message)') +
+                    (ok ? '' : '  [expected it to mention "' + mustContain + '"]'));
+            }
+        }
+
+        /* ---------- 3. Behavior checks ---------- */
+
+        function check(name, fn) {
+            try {
+                const r = fn();
+                addLine(r ? 'ok' : 'bad', name);
+            } catch (e) {
+                addLine('bad', name + ' threw: ' + e.message);
+            }
+        }
+
+        check('same input gives the same SVG twice', () => {
+            const o = { type: 'qr', msg: 'repeat', size: 150 };
+            return toSvgString(generate(o)) === toSvgString(generate(o));
+        });
+
+        check('type defaults to qr', () => {
+            return toSvgString(generate({ msg: 'x' })) === toSvgString(generate({ type: 'qr', msg: 'x' }));
+        });
+
+        check('type is case-insensitive', () => {
+            return toSvgString(generate({ type: 'QR', msg: 'x' })) === toSvgString(generate({ type: 'qr', msg: 'x' }));
+        });
+
+        check('qr size sets width and height', () => {
+            const svg = generate({ type: 'qr', msg: 'x', size: 123 });
+            return svg.getAttribute('width') === '123' && svg.getAttribute('height') === '123';
+        });
+
+        check('code128 size [w, h] sets width and height', () => {
+            const svg = generate({ type: 'code128', msg: 'x', size: [400, 100] });
+            return svg.getAttribute('width') === '400' && svg.getAttribute('height') === '100';
+        });
+
+        check('transparent background removes the background path', () => {
+            const a = generate({ type: 'qr', msg: 'x', colors: { bg: '#fff' } });
+            const b = generate({ type: 'qr', msg: 'x', colors: { bg: 'transparent' } });
+            return a.childNodes.length === 2 && b.childNodes.length === 1;
+        });
+
+        check('foreground color is applied', () => {
+            return generate({ type: 'qr', msg: 'x', colors: { fg: '#123456' } }).getAttribute('fill') === '#123456';
+        });
+
+        check('code128 flip changes the output', () => {
+            const a = toSvgString(generate({ type: 'code128', msg: 'Hello' }));
+            const b = toSvgString(generate({ type: 'code128', msg: 'Hello', code128: { flip: true } }));
+            return a !== b;
+        });
+
+        check('code128 flip twice style: flipped output keeps bar path', () => {
+            const a = generate({ type: 'code128', msg: 'Hello' }).lastChild.getAttribute('d');
+            const b = generate({ type: 'code128', msg: 'Hello', code128: { flip: true } }).lastChild.getAttribute('d');
+            return a === b;
+        });
+
+        check('toDataURL decodes back to the SVG text', () => {
+            const svg = generate({ type: 'datamatrix', msg: 'round trip' });
+            const url = toDataURL(svg);
+            const back = decodeURIComponent(url.slice(url.indexOf(',') + 1));
+            return url.startsWith('data:image/svg+xml') && back === toSvgString(svg);
+        });
+
+        check('errors are CodeError instances', () => {
+            try {
+                generate({ type: 'qr', msg: '' });
+                return false;
+            } catch (e) {
+                return e.name === 'CodeError' && e instanceof Error;
+            }
+        });
+
+        check('no globals left behind', () => {
+            return ['QRCode', 'DATAMatrix', 'BARCode'].every(n => !(n in window));
+        });
+
+        /* ---------- Summary ---------- */
+
+        const total = counts.pass + counts.fail + counts.new;
+        let cls = 'ok';
+        let text = 'All ' + total + ' checks passed.';
+
+        if (counts.fail > 0) {
+            cls = 'bad';
+            text = counts.fail + ' failed, ' + counts.pass + ' passed' + (counts.new ? ', ' + counts.new + ' new' : '') + '.';
+        } else if (counts.new > 0) {
+            cls = 'new';
+            text = counts.pass + ' passed, ' + counts.new + ' new (no snapshot saved yet). Record snapshots below.';
+        }
+
+        summary.className = cls;
+        summary.textContent = text;
+        document.title = (counts.fail ? 'FAIL' : counts.new ? 'NEW' : 'PASS') + ' · svg-codes tests';
+
+        /* ---------- Record snapshots ---------- */
+
+        recordBtn.addEventListener('click', () => {
+            const body = JSON.stringify(current, null, 4);
+            out.value =
+                '/*\n' +
+                ' * Saved expected SVG strings, one per test id in tests.html.\n' +
+                ' * Recorded from tests.html. Review changes before committing.\n' +
+                ' */\n\n' +
+                'export const snapshots = ' + body + ';\n';
+            out.hidden = false;
+            copyBtn.hidden = false;
+            out.focus();
+            out.select();
+        });
+
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(out.value);
+                copyBtn.textContent = 'Copied';
+            } catch (e) {
+                out.focus();
+                out.select();
+                copyBtn.textContent = 'Press Ctrl+C';
+            }
+            setTimeout(() => { copyBtn.textContent = 'Copy file text'; }, 1800);
+        });
+    </script>
+</body>
+
+</html>

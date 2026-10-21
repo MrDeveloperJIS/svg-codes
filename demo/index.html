@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0c0c0c">
+    <link rel="icon" href="../favicon.ico">
+    <link rel="stylesheet" href="style.css">
+    <title>svg-codes: QR Code, Data Matrix and Code 128 generator</title>
+</head>
+
+<body>
+    <main>
+        <header class="head">
+            <h1>svg-codes</h1>
+            <p class="sub">Make QR codes, Data Matrix and Code 128 barcodes as crisp, scannable SVG.</p>
+        </header>
+
+        <!-- Preview -->
+        <div class="stage-wrap">
+            <div id="stage" class="stage">
+                <p id="placeholder" class="placeholder">Enter some text to see a code.</p>
+                <img id="preview" class="preview-img" alt="" hidden>
+            </div>
+            <p id="note" class="note" hidden>Showing the last valid code.</p>
+        </div>
+
+        <div class="actions" role="group" aria-label="Actions">
+            <button type="button" data-action="svg" disabled>Download SVG</button>
+            <button type="button" data-action="png" disabled>Download PNG</button>
+            <button type="button" data-action="copy-svg" disabled>Copy SVG</button>
+        </div>
+
+        <!-- Scan check -->
+        <ul id="warnings" class="warnings" aria-label="Scan check" aria-live="polite"></ul>
+
+        <!-- Type tabs -->
+        <div class="tabs" role="tablist" aria-label="Code type">
+            <button type="button" role="tab" id="tab-qr" data-type="qr" aria-selected="true" aria-controls="panel" tabindex="0">QR Code</button>
+            <button type="button" role="tab" id="tab-datamatrix" data-type="datamatrix" aria-selected="false" aria-controls="panel" tabindex="-1">Data Matrix</button>
+            <button type="button" role="tab" id="tab-code128" data-type="code128" aria-selected="false" aria-controls="panel" tabindex="-1">Barcode</button>
+        </div>
+
+        <!-- Controls (one panel, content changes with the active tab) -->
+        <div id="panel" class="panel" role="tabpanel" aria-labelledby="tab-qr">
+
+            <!-- QR templates -->
+            <div class="field" data-for="qr">
+                <label for="template">Start from a template</label>
+                <select id="template">
+                    <option value="">Choose a template…</option>
+                    <option value="url">URL</option>
+                    <option value="wifi">Wi-Fi</option>
+                    <option value="vcard">vCard</option>
+                    <option value="email">Email</option>
+                    <option value="text">Plain text</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <div class="row-between">
+                    <label for="msg">Text to encode</label>
+                    <span id="count" class="hint">0 characters</span>
+                </div>
+                <textarea id="msg" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="hint error"></textarea>
+                <p id="hint" class="hint"></p>
+                <p id="error" class="error" role="alert"></p>
+            </div>
+
+            <!-- QR options -->
+            <fieldset class="opts" data-for="qr">
+                <legend>QR options</legend>
+
+                <div class="field">
+                    <span class="label" id="l-ecl">Error correction</span>
+                    <div class="seg" role="radiogroup" aria-labelledby="l-ecl">
+                        <label><input type="radio" name="ecl" value="L"><span>L</span></label>
+                        <label><input type="radio" name="ecl" value="M"><span>M</span></label>
+                        <label><input type="radio" name="ecl" value="Q"><span>Q</span></label>
+                        <label><input type="radio" name="ecl" value="H"><span>H</span></label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="mask">Mask pattern</label>
+                    <select id="mask">
+                        <option value="-1">Auto</option>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                </div>
+
+                <label class="check"><input type="checkbox" id="boost"><span>Boost error correction when space
+                        allows</span></label>
+            </fieldset>
+
+            <!-- Data Matrix options -->
+            <fieldset class="opts" data-for="datamatrix" hidden>
+                <legend>Data Matrix options</legend>
+
+                <div class="field">
+                    <span class="label" id="l-shape">Shape</span>
+                    <div class="seg" role="radiogroup" aria-labelledby="l-shape">
+                        <label><input type="radio" name="shape" value="square"><span>Square</span></label>
+                        <label><input type="radio" name="shape" value="rect"><span>Rectangular</span></label>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Code 128 options -->
+            <fieldset class="opts" data-for="code128" hidden>
+                <legend>Barcode options</legend>
+
+                <div class="two">
+                    <div class="field">
+                        <label for="width">Width (px)</label>
+                        <input type="number" id="width" min="1" max="4000" step="1" inputmode="numeric">
+                    </div>
+                    <div class="field">
+                        <label for="height">Height (px)</label>
+                        <input type="number" id="height" min="1" max="4000" step="1" inputmode="numeric">
+                    </div>
+                </div>
+
+                <label class="check"><input type="checkbox" id="flip"><span>Flip (mirror the bars)</span></label>
+                <label class="check"><input type="checkbox" id="vertical"><span>Vertical orientation</span></label>
+            </fieldset>
+
+            <!-- Common options -->
+            <fieldset class="opts">
+                <legend>Appearance</legend>
+
+                <div class="field" id="field-size">
+                    <div class="row-between">
+                        <label for="size">Size (px)</label>
+                        <output id="size-out" for="size"></output>
+                    </div>
+                    <input type="range" id="size" min="64" max="512" step="8">
+                </div>
+
+                <div class="field">
+                    <div class="row-between">
+                        <label for="padding" id="padding-label">Padding (blocks)</label>
+                        <output id="padding-out" for="padding"></output>
+                    </div>
+                    <input type="range" id="padding" min="0" max="10" step="1">
+                </div>
+
+                <div class="two">
+                    <div class="field">
+                        <label for="fg">Foreground</label>
+                        <input type="color" id="fg" value="#000000">
+                    </div>
+                    <div class="field">
+                        <label for="bg">Background</label>
+                        <input type="color" id="bg" value="#ffffff">
+                    </div>
+                </div>
+
+                <label class="check"><input type="checkbox" id="transparent"><span>Transparent background</span></label>
+            </fieldset>
+        </div>
+
+        <!-- Code snippet -->
+        <details class="snippet">
+            <summary>Code snippet</summary>
+            <div class="snippet-body">
+                <pre id="snippet" tabindex="0"><code></code></pre>
+                <button type="button" id="copy-snippet">Copy snippet</button>
+            </div>
+        </details>
+
+        <!-- Keyboard shortcuts -->
+        <details class="snippet">
+            <summary>Keyboard shortcuts</summary>
+            <div class="snippet-body">
+                <ul class="keys">
+                    <li><kbd>/</kbd> <span>Focus the text box</span></li>
+                    <li><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <span>QR Code, Data Matrix, Barcode</span></li>
+                    <li><kbd>S</kbd> <span>Download SVG</span></li>
+                    <li><kbd>P</kbd> <span>Download PNG</span></li>
+                    <li><kbd>C</kbd> <span>Copy SVG</span></li>
+                </ul>
+                <p class="hint">Shortcuts are off while you type in a field.</p>
+            </div>
+        </details>
+
+    </main>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
