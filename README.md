@@ -5,6 +5,24 @@ Pure HTML, CSS and vanilla JavaScript. No framework, no bundler, no dependencies
 
 **[Live demo](https://MrDeveloperJIS.github.io/svg-codes/)**
 
+## Contents
+
+- [Credits](#credits)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [API reference](#api-reference)
+- [Guide to each code type](#guide-to-each-code-type)
+- [Error handling](#error-handling)
+- [Recipes](#recipes)
+- [Demo app](#demo-app)
+- [Troubleshooting](#troubleshooting)
+- [Browser support](#browser-support)
+- [Development](#development)
+- [Project layout](#project-layout)
+- [Changelog](#changelog)
+- [License](#license)
+
 ## Credits
 
 The three generators underneath are written by
@@ -29,6 +47,18 @@ Their license texts are in [`licenses/`](licenses/) and details are in
 - Works as an ES module or as a single `<script>` tag.
 - Original function names (`QRCode`, `DATAMatrix`, `BARCode`) are still exported.
 
+## Installation
+
+There is no package to install. Copy the files into your project, or clone the repository.
+
+| You want | Copy this | Use it with |
+|---|---|---|
+| ES module, separate files | the `src/` folder | `import { generate } from './src/index.js'` |
+| One file, plain script tag | `dist/svg-codes.js` | `<script src="svg-codes.js">`, global `SvgCodes` |
+
+`dist/svg-codes.js` is already built and committed. You only need to build it yourself
+after changing something in `src/` (see [Development](#development)).
+
 ## Quick start
 
 ### As an ES module
@@ -44,9 +74,10 @@ Their license texts are in [`licenses/`](licenses/) and details are in
 </script>
 ```
 
-### As a single script tag
+Browsers do not load ES modules from `file://`. Open the page through a web server
+(see [Development](#development)).
 
-Build the file once (see [Development](#development)), then:
+### As a single script tag
 
 ```html
 <div id="out"></div>
@@ -58,7 +89,7 @@ Build the file once (see [Development](#development)), then:
 </script>
 ```
 
-The only global added is `SvgCodes`.
+The only global added is `SvgCodes`. This version also works from `file://`.
 
 ### Examples
 
@@ -98,15 +129,20 @@ generate({
 });
 ```
 
-## Unified options
+## API reference
 
-`generate(options)` takes one object. Only `msg` is required.
+### `generate(options)`
+
+Returns an `SVGElement`. Throws a [`CodeError`](#error-handling) on bad input.
+Only `msg` is required.
+
+#### Options
 
 | Option | Applies to | Default | Description |
 |---|---|---|---|
 | `type` | all | `'qr'` | `'qr'`, `'datamatrix'` or `'code128'` (case-insensitive). |
 | `msg` | all | none | Text to encode. Must be a non-empty string. |
-| `size` | 2D | `256` | Height in px. Width follows the symbol shape. |
+| `size` | QR, Data Matrix | `256` | Height in px. Width follows the symbol shape. |
 | `size` | Code 128 | `[320, 80]` | `[width, height]`, `{ width, height }`, or one number `n` (becomes `n` wide and `n / 4` high). |
 | `padding` | QR | `4` | Quiet zone in blocks. |
 | `padding` | Data Matrix | `2` | Quiet zone in blocks. |
@@ -124,25 +160,7 @@ generate({
 
 Code 128 uses character set B: printable ASCII only (space to `~`).
 
-## Mapping to the original options
-
-| Unified | `QRCode` | `DATAMatrix` | `BARCode` |
-|---|---|---|---|
-| `msg` | `msg` | `msg` | `msg` |
-| `size` | `dim` (number) | `dim` (number) | `dim` `[width, height]` |
-| `padding` | `pad` (blocks) | `pad` (blocks) | `pad` `[x, y]` (px) |
-| `colors.fg`, `colors.bg` | `pal` `[fg, bg]` | `pal` `[fg, bg]` | `pal` `[fg, bg]` |
-| `qr.ecl` | `ecl` | n/a | n/a |
-| `qr.boost` | `ecb` (1 or 0) | n/a | n/a |
-| `qr.mask` | `mtx` | n/a | n/a |
-| `qr.verbose` / `datamatrix.verbose` | `vrb` | `vrb` | n/a |
-| `datamatrix.rect` | n/a | `rct` (1 or 0) | n/a |
-| `code128.vertical` | n/a | n/a | set by swapping width and height in `dim` |
-| `code128.flip` | n/a | n/a | not supported upstream; the adapter rewrites the bars' transform |
-
-A transparent background is passed to the originals by leaving `bg` out of `pal`.
-
-## Helpers
+### Helpers
 
 ```js
 import {
@@ -166,16 +184,71 @@ const blob = await toPNG(svg, {
 | `generate(options)` | Returns an `SVGElement`. Throws `CodeError` on bad input. |
 | `toSvgString(svg)` | SVG element to SVG text. Also exported as `toString`. |
 | `toDataURL(svg)` | SVG element to a data URL for `<img src>` or downloads. |
-| `toPNG(svg, options)` | SVG element to a PNG `Blob`. Asynchronous (returns a Promise). |
+| `toPNG(svg, options)` | SVG element to a PNG `Blob`. Asynchronous (returns a Promise). Rejects with `CodeError` if `scale` is not a number above 0 or the image cannot be drawn. |
 | `TYPES` | `['qr', 'datamatrix', 'code128']` |
 | `CodeError` | Error class used for every readable error. |
 | `QRCode`, `DATAMatrix`, `BARCode` | The original generator functions, unchanged. |
 | `Codes` (default export) | Object with `generate`, `toString`, `toDataURL`, `toPNG`, `TYPES`. |
 
+`toPNG` options:
+
+| Option | Default | Description |
+|---|---|---|
+| `scale` | `1` | Multiplies the SVG's pixel width and height. Must be above 0. |
+| `background` | none | CSS color painted behind the code. Without it the PNG keeps a transparent background. |
+
 In the single-file build, all of these live on `SvgCodes`
 (`SvgCodes.generate`, `SvgCodes.toString`, `SvgCodes.toDataURL`, and so on).
+The `QRCode`, `DATAMatrix` and `BARCode` names are on `SvgCodes` too, but they are not added to `window`.
 
-## Error behavior
+### Mapping to the original options
+
+If you already know the upstream generators, this table shows how each unified option maps to them.
+
+| Unified | `QRCode` | `DATAMatrix` | `BARCode` |
+|---|---|---|---|
+| `msg` | `msg` | `msg` | `msg` |
+| `size` | `dim` (number) | `dim` (number) | `dim` `[width, height]` |
+| `padding` | `pad` (blocks) | `pad` (blocks) | `pad` `[x, y]` (px) |
+| `colors.fg`, `colors.bg` | `pal` `[fg, bg]` | `pal` `[fg, bg]` | `pal` `[fg, bg]` |
+| `qr.ecl` | `ecl` | n/a | n/a |
+| `qr.boost` | `ecb` (1 or 0) | n/a | n/a |
+| `qr.mask` | `mtx` | n/a | n/a |
+| `qr.verbose` / `datamatrix.verbose` | `vrb` | `vrb` | n/a |
+| `datamatrix.rect` | n/a | `rct` (1 or 0) | n/a |
+| `code128.vertical` | n/a | n/a | set by swapping width and height in `dim` |
+| `code128.flip` | n/a | n/a | not supported upstream; the adapter rewrites the bars' transform |
+
+A transparent background is passed to the originals by leaving `bg` out of `pal`.
+
+## Guide to each code type
+
+### QR Code
+
+- Best for URLs, Wi-Fi details, contacts and short text.
+- `qr.ecl` trades capacity for damage tolerance: `L` holds the most data, `H` survives the most damage.
+- `qr.boost` (on by default) quietly raises the level when the text is short enough that it costs nothing.
+- Leave `qr.mask` at `-1` unless you have a reason; the generator picks the best mask itself.
+- Keep `padding` at 4 blocks or more. Scanners need that empty border.
+- Too much text throws a `CodeError`. The largest symbol holds about 2,953 bytes at level `L` and 1,273 bytes at level `H`.
+
+### Data Matrix
+
+- Compact 2D code, common for small labels and parts marking.
+- Holds roughly 1,500 characters.
+- `datamatrix.rect` asks for a rectangular symbol. It only works for short text and falls back to square for longer text.
+- Keep at least 1 block of `padding`.
+
+### Code 128
+
+- 1D barcode for ASCII text such as order numbers and SKUs.
+- Printable ASCII only (space to `~`). Anything else throws a `CodeError` that names the character.
+- `size` is `[width, height]` in px. Longer text needs a wider barcode, otherwise the bars become too thin to scan.
+- `padding` is in px, not blocks. The default is `[20, 16]` (20 px at each end, 16 px top and bottom).
+- Vertical bars: set `code128.vertical: true`, or give a `size` that is taller than it is wide. The adapter swaps width and height if they disagree with the setting.
+- `code128.flip` mirrors the bars.
+
+## Error handling
 
 Every problem with the input throws a `CodeError` with a plain message you can show to a user:
 
@@ -197,17 +270,125 @@ Cases that are checked:
 - Invalid colors, QR level, QR mask, size or padding.
 - Code 128 padding that is too large for the size.
 
+## Recipes
+
+### Show a code inside an `<img>`
+
+```js
+const img = document.createElement('img');
+img.src = toDataURL(generate({ type: 'qr', msg: 'Hello' }));
+document.body.appendChild(img);
+```
+
+### Download as SVG
+
+```js
+const svg = generate({ type: 'qr', msg: 'Hello' });
+const blob = new Blob([toSvgString(svg)], { type: 'image/svg+xml' });
+
+const a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = 'code.svg';
+a.click();
+URL.revokeObjectURL(a.href);
+```
+
+### Download as PNG
+
+```js
+const svg = generate({ type: 'qr', msg: 'Hello', size: 256 });
+const blob = await toPNG(svg, { scale: 4, background: '#ffffff' });
+
+const a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = 'code.png';
+a.click();
+URL.revokeObjectURL(a.href);
+```
+
+### Show a friendly message on bad input
+
+```js
+try {
+    container.replaceChildren(generate({ type: 'qr', msg: input.value }));
+} catch (e) {
+    if (e instanceof CodeError) message.textContent = e.message;
+    else throw e;
+}
+```
+
+## Demo app
+
+The demo lives in [`demo/`](demo/) and runs live at the link at the top.
+
+- QR Code, Data Matrix and Code 128 tabs. Each tab remembers its own settings.
+- Live preview that updates as you type. If the text becomes invalid, the last valid code stays visible with an error message.
+- Downloads: **Download SVG** and **Download PNG** (scaled up to about 1024 px on the longest side).
+- Copy buttons: **Copy SVG** and **Copy snippet**.
+- A code snippet showing the `generate()` call for the current settings.
+- QR templates: URL, Wi-Fi, vCard, Email and Plain text.
+- Scan-check warnings for low contrast, inverted colors, a transparent background, blocks or bars that are too small, and a missing quiet zone.
+
+### Keyboard shortcuts
+
+Shortcuts are off while you type in a field.
+
+| Key | Action |
+|---|---|
+| `/` | Focus the text box |
+| `1` `2` `3` | QR Code, Data Matrix, Barcode |
+| `S` | Download SVG |
+| `P` | Download PNG |
+| `C` | Copy SVG |
+
+### Shareable links
+
+The settings are stored in the URL hash, so you can copy the address bar to share an exact setup.
+
+| Parameter | Meaning |
+|---|---|
+| `type` | `qr`, `datamatrix` or `code128` |
+| `msg` | The text to encode |
+| `pad` | Padding (blocks for 2D, px for Code 128) |
+| `size` | Size in px (QR and Data Matrix) |
+| `ecl`, `mask`, `boost` | QR error correction level, mask `-1` to `7`, boost `1` or `0` |
+| `rect` | Data Matrix rectangular, `1` or `0` |
+| `w`, `h` | Code 128 width and height in px |
+| `flip`, `vert` | Code 128 mirror and vertical, `1` or `0` |
+| `fg`, `bg` | Colors as six hex digits without `#` |
+| `tp` | `1` for a transparent background (then `bg` is left out) |
+
+Example: `demo/#type=qr&msg=Hello&size=256&ecl=M&fg=000000&bg=ffffff`
+
+## Troubleshooting
+
+**The demo or my module page is blank, with a CORS or module error in the console.**
+Browsers block ES modules on `file://`. Serve the folder with a local web server, or use `dist/svg-codes.js` with a normal script tag.
+
+**`generate` is not defined.**
+With the script-tag build everything is on the global: use `SvgCodes.generate(...)`.
+
+**Nothing appears on the page.**
+`generate()` only returns the element. You must add it yourself, for example with `container.appendChild(svg)`.
+
+**`document is not defined` in Node.**
+The generators build SVG with the DOM, so the library runs in browsers only.
+
+**A Data Matrix is square even though `rect: true`.**
+Rectangular symbols only fit short text. Longer text falls back to square.
+
+**Code 128 throws a "cannot encode" error.**
+Only printable ASCII (space to `~`) is supported. The message names the character that failed.
+
+**A code does not scan.**
+Check the demo's scan-check warnings: contrast of at least 4:1, dark code on a light background, enough padding, and large enough blocks or bars.
+
 ## Browser support
 
 The generators build the SVG with `document.createElementNS`, so the library runs in browsers only (not in plain Node).
 It needs ES module support for the module version, which every current browser has.
 The single-file build runs anywhere that runs a normal `<script>` tag.
-
-## Demo
-
-The demo lives in [`demo/`](demo/): QR Code, Data Matrix and Code 128 tabs, live preview, downloads (SVG, PNG),
-copy buttons, a code snippet for the current settings, QR templates, scan-check warnings, keyboard shortcuts and shareable links
-(settings are stored in the URL hash).
+`toPNG` additionally needs canvas support.
 
 ## Development
 
@@ -217,15 +398,7 @@ Browsers do not load ES modules from `file://`, so always use a local server:
 python -m http.server 8000
 ```
 
-Then open:
-
-| Page | Purpose |
-|---|---|
-| `http://localhost:8000/demo/` | The demo app. |
-| `http://localhost:8000/tests.html` | Snapshot and behavior tests. |
-| `http://localhost:8000/dist-test.html` | Tests the single-file build against the module version. |
-| `http://localhost:8000/api-test.html` | Quick visual API check. |
-| `http://localhost:8000/wrap-test.html` | Checks that the vendor files import cleanly. |
+Then open `http://localhost:8000/demo/`.
 
 ### Build the single file
 
@@ -234,45 +407,60 @@ node scripts/build.js
 ```
 
 This writes `dist/svg-codes.js`. It needs plain Node and no packages.
-Run it again after any change in `src/`, then open `dist-test.html` and confirm everything is green.
+Run it again after any change in `src/`, and commit the new file.
+The script checks that every import is in the build list and in the right order,
+and that the result parses as a plain script.
 
-### Tests
+### Checking a change
 
-`tests.html` regenerates a set of known inputs and compares each SVG string to the one saved in `tests/snapshots.js`.
-After an intended change, review the codes on the page (and scan a few with a phone), press **Record snapshots**,
-paste the result over `tests/snapshots.js`, and reload. Everything should be PASS.
+There is no automated test suite. After a change:
+
+1. Run `node scripts/build.js`.
+2. Open the demo and generate each of the three types.
+3. Scan a few of the codes with a phone.
+4. Try bad input (empty text, too much text, `café` in Code 128) and confirm the error message is readable.
 
 ### Updating the vendor files
 
 Each file in `src/vendor/` is the upstream source with exactly two edits. See
-[`src/vendor/WRAPPING.md`](src/vendor/WRAPPING.md). To update: download the new upstream file, repeat the two edits,
-then run `tests.html` and `dist-test.html`.
+[`src/vendor/WRAPPING.md`](src/vendor/WRAPPING.md). To update: download the new upstream file,
+repeat the two edits, rebuild with `node scripts/build.js`, then check the demo as described above.
+
+### Hosting the demo
+
+The repository is ready for GitHub Pages: the root `index.html` redirects to `demo/`,
+and `.nojekyll` makes Pages serve the files as they are.
 
 ## Project layout
 
 ```
 svg-codes/
 ├─ src/
-│  ├─ vendor/        original generators (export line added only)
+│  ├─ vendor/        original generators (export line added only), plus WRAPPING.md
 │  ├─ adapters/      one adapter per type, plus shared helpers
 │  └─ index.js       unified API (ES module)
 ├─ dist/
 │  └─ svg-codes.js   single-file build for a plain <script> tag
 ├─ demo/             index.html, style.css, app.js
-├─ tests/            saved snapshots
 ├─ licenses/         original MIT license texts
-├─ scripts/          build.js
-├─ tests.html        snapshot and behavior tests
-└─ dist-test.html    tests for the single-file build
+├─ scripts/
+│  └─ build.js       builds dist/svg-codes.js
+├─ index.html        redirects to demo/
+├─ favicon.ico
+├─ .nojekyll         tells GitHub Pages to skip Jekyll
+├─ CHANGELOG.md
+├─ THIRD_PARTY_NOTICES.md
+├─ LICENSE
+└─ README.md
 ```
 
 ## Changelog
 
-See [`CHANGELOG`](CHANGELOG.md) for the release history.
+See [`CHANGELOG`](CHANGELOG.md) for the version history.
 
 ## License
 
-Own code (adapters, unified API, demo, tests, build script): [MIT](LICENSE).
+Own code (adapters, unified API, demo, build script): [MIT](LICENSE).
 
 The generators in `src/vendor/` are by datalog, also MIT. See
 [`THIRD PARTY NOTICES`](THIRD_PARTY_NOTICES.md) and [`licenses`](licenses/).

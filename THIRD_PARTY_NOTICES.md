@@ -37,5 +37,5 @@ The full license text for each project is in [`licenses/`](licenses/).
 
 ---
 
-Everything outside `src/vendor/` (adapters, unified API, demo, tests) is
+Everything outside `src/vendor/` (adapters, unified API, demo, build script) is
 original work, covered by the MIT license in [`LICENSE`](LICENSE).
